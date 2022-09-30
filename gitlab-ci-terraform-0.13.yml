@@ -1,0 +1,106 @@
+variables:
+  PLAN: plan.cache
+  PLAN_JSON: plan.json
+  TFE_TOKEN: "SyDoIIOey0ydyQ.atlasv1.qIu72TqMwq0xDzRBcndJcEstfQnkW1aaINKhVUi5Xcbicn1AbJgZzXV135zjV0f88Uk"
+  AWS_ROLE_ARN: "arn:aws:iam::637932036017:role/terraform"
+  TERRAFORM_VERSION: "0.13.7"
+
+image:
+  name: hashicorp/terraform:$TERRAFORM_VERSION
+  entrypoint:
+    - '/usr/bin/env'
+    - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
+#cache:
+#  key: "$CI_COMMIT_SHA"
+#  paths:
+#    - ${TF_ROOT}/.terraform
+
+stages:
+  - authenticate
+  - validate
+  - plan
+#  - apply
+
+authenticate:
+  stage: authenticate
+  image:
+    name: amazon/aws-cli:latest
+    entrypoint: [""]
+  script:
+    - >
+      STS=($(aws sts assume-role-with-web-identity
+      --role-arn $AWS_ROLE_ARN
+      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+      --web-identity-token $CI_JOB_JWT_V2
+      --duration-seconds 900
+      --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+      --output text))
+    - echo AWS_ACCESS_KEY_ID="${STS[0]}" >> auth.env
+    - echo AWS_SECRET_ACCESS_KEY="${STS[1]}" >> auth.env
+    - echo AWS_SESSION_TOKEN="${STS[2]}" >> auth.env
+  artifacts:
+    reports:
+      dotenv: auth.env
+  allow_failure: false
+
+#validate:
+#  stage: validate
+#  image:
+#    name: amazon/aws-cli:latest
+#    entrypoint: [""]
+#  script:
+#    - aws sts get-caller-identity
+#    - aws s3 ls
+#  only:
+#    - merge_requests
+#    - master
+#  dependencies:
+#    - authenticate
+
+validate:
+  stage: validate
+  script:
+    - terraform init -backend-config="token=$TFE_TOKEN"
+    - terraform validate
+  only:
+    - merge_requests
+    - master
+
+plan:
+  stage: plan
+  script:
+    - apk add py3-pip && pip3 install --upgrade awscli
+    - aws s3 ls
+    - apk --no-cache add jq
+    - alias convert_report="jq -r '([.resource_changes[]?.change.actions?]|flatten)|{\"create\":(map(select(.==\"create\"))|length),\"update\":(map(select(.==\"update\"))|length),\"delete\":(map(select(.==\"delete\"))|length)}'"
+    - terraform init -backend-config="token=$TFE_TOKEN"
+    - terraform plan -out=$PLAN
+    - terraform show --json $PLAN | convert_report > $PLAN_JSON
+  artifacts:
+    reports:
+      terraform: $PLAN_JSON
+    expire_in: 7 days
+  dependencies:
+    - authenticate
+  only:
+    - merge_requests
+    - master
+
+#apply:
+#  stage: apply
+#  script:
+#    - terraform apply -auto-approve -input=false
+#  dependencies:
+#    - plan
+#  allow_failure: false
+#  when: manual
+#  only:
+#    - master
+
+#workflow:
+#  rules:
+#    - if:
+#      changes: 
+#        - .gitlab-ci.yml
+#      when: never
