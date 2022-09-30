@@ -1,7 +1,7 @@
 variables:
   PLAN: plan.cache
   PLAN_JSON: plan.json
-  TFE_TOKEN: "SyDoIIOey0ydyQ.atlasv1.qIu72TqMwq0xDzRBcndJcEstfQnkW1aaINKhVUi5Xcbicn1AbJgZzXV135zjV0f88Uk"
+  #TFE_TOKEN: "SyDoIIOey0ydyQ.atlasv1.qIu72TqMwq0xDzRBcndJcEstfQnkW1aaINKhVUi5Xcbicn1AbJgZzXV135zjV0f88Uk"
   AWS_ROLE_ARN: "arn:aws:iam::637932036017:role/terraform"
   TERRAFORM_VERSION: "0.13.7"
 
