@@ -48,11 +48,6 @@ image:
   - if: $CI_COMMIT_MESSAGE =~ /deploy all/
     when: manual
 
-.parallel: &parallel
-  parallel:
-    matrix:
-      - TF_ENVIRONMENT: [${TF_ENVIRONMENTS}]
-
 .validate:
   stage: validate
   <<: *cache
