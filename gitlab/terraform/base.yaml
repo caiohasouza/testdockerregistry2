@@ -1,0 +1,78 @@
+.cache: &cache
+  cache:
+    key: ${TF_ENVIRONMENT}
+    paths:
+      - ${TF_ROOT}/environments/${TF_ENVIRONMENT}/.terraform/
+
+.aws-assume-role: &aws-assume-role
+  - apk add -q --no-cache py3-pip && pip3 -q install --upgrade awscli
+  - >
+    export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
+    $(aws sts assume-role-with-web-identity
+    --role-arn ${ROLE_ARN}
+    --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+    --web-identity-token $CI_JOB_JWT_V2
+    --duration-seconds 900
+    --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+    --output text))
+
+.rules-merge-request: &rules-merge-request
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    changes:
+    - environments/${TF_ENVIRONMENT}/**
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    changes:
+    - environments/${TF_ENVIRONMENT}/**
+  - if: $CI_COMMIT_MESSAGE =~ /deploy all/
+
+.rules-main: &rules-main
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    changes:
+    - environments/${TF_ENVIRONMENT}/**
+    when: manual
+  - if: $CI_COMMIT_MESSAGE =~ /deploy all/
+    when: manual
+
+.parallel: &parallel
+  parallel:
+    matrix:
+      - TF_ENVIRONMENT: [${TF_ENVIRONMENTS}]
+
+.validate:
+  stage: validate
+  <<: *cache
+  <<: *parallel
+  script:
+    - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
+    - terraform init
+    - terraform validate
+    - terraform fmt -list=true -write=false -diff=true -check=true -recursive
+
+.plan:
+  stage: plan
+  <<: *cache
+  <<: *parallel
+  script:
+    - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
+    - *aws-assume-role
+    - apk --no-cache add -q jq curl
+    - alias convert_report="jq -r '([.resource_changes[]?.change.actions?]|flatten)|{\"create\":(map(select(.==\"create\"))|length),\"update\":(map(select(.==\"update\"))|length),\"delete\":(map(select(.==\"delete\"))|length)}'"
+    - terraform plan -lock=false -out=$PLAN
+    - terraform show --json $PLAN | convert_report > $PLAN_JSON
+  artifacts:
+    name: plan
+    paths:
+      - ${CI_PROJECT_DIR}/environments/${TF_ENVIRONMENT}/${PLAN}
+    reports:
+      terraform: ${CI_PROJECT_DIR}/environments/${TF_ENVIRONMENT}/${PLAN_JSON}
+    expire_in: 7 days
+
+.apply:
+  stage: apply
+  <<: *cache
+  <<: *parallel
+  script:
+    - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
+    - *aws-assume-role
+    - terraform apply -auto-approve -input=false $PLAN
+  allow_failure: false

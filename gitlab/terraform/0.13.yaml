@@ -1,0 +1,45 @@
+variables:
+  PLAN: "plan.tfplan"
+  PLAN_JSON: "plan.json"
+  TF_VERSION: "0.13.7"
+  TF_IN_AUTOMATION: "true"
+  TF_ROOT: "${CI_PROJECT_DIR}"
+  TF_STATE_NAME: "default"
+  TF_HTTP_USERNAME: "gitlab-ci-token"
+  TF_HTTP_PASSWORD: "${CI_JOB_TOKEN}"
+  TF_ENVIRONMENTS: [staging,production]
+
+include:
+  remote: 'https://raw.githubusercontent.com/caiohasouza/testdockerregistry2/master/gitlab/terraform/base.yml'
+
+image:
+  name: hashicorp/terraform:$TF_VERSION
+  entrypoint:
+    - '/usr/bin/env'
+    - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
+stages:
+  - validate
+  - plan
+  - apply
+
+validate:
+  extends: .validate
+  rules:
+    - *rules-merge-request
+
+plan:
+  extends: .plan
+  variables:
+    ROLE_ARN: "${AWS_ROLE_ARN}-readOnly"
+  rules:
+    - *rules-merge-request
+
+apply:
+  extends: .apply
+  variables:
+    ROLE_ARN: "${AWS_ROLE_ARN}"
+  dependencies:
+    - plan
+  rules:
+    - *rules-main
