@@ -25,15 +25,11 @@ stages:
 
 validate:
   extends: .validate
-  rules:
-    - *rules-merge-request
 
 plan:
   extends: .plan
   variables:
     ROLE_ARN: "${AWS_ROLE_ARN}-readOnly"
-  rules:
-    - *rules-merge-request
 
 apply:
   extends: .apply
@@ -41,5 +37,3 @@ apply:
     ROLE_ARN: "${AWS_ROLE_ARN}"
   dependencies:
     - plan
-  rules:
-    - *rules-main
