@@ -85,7 +85,6 @@ image:
   script:
     - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
     - *aws-assume-role
-    - aws sts get-caller-identity
     - terraform apply -auto-approve -input=false $PLAN
   allow_failure: false
   rules:
