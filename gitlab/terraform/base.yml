@@ -56,7 +56,6 @@ image:
 .validate:
   stage: validate
   <<: *cache
-  <<: *parallel
   script:
     - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
     - terraform init
@@ -68,7 +67,6 @@ image:
 .plan:
   stage: plan
   <<: *cache
-  <<: *parallel
   script:
     - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
     - *aws-assume-role
@@ -89,7 +87,6 @@ image:
 .apply:
   stage: apply
   <<: *cache
-  <<: *parallel
   script:
     - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
     - *aws-assume-role
