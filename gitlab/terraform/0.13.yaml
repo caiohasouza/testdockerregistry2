@@ -10,7 +10,7 @@ variables:
   TF_ENVIRONMENTS: [staging,production]
 
 include:
-  remote: 'https://raw.githubusercontent.com/caiohasouza/testdockerregistry2/master/gitlab/terraform/base.yml'
+  remote: 'https://raw.githubusercontent.com/caiohasouza/testdockerregistry2/master/gitlab/terraform/base.yaml'
 
 image:
   name: hashicorp/terraform:$TF_VERSION
