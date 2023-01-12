@@ -1,3 +1,18 @@
+variables:
+  PLAN: "plan.tfplan"
+  PLAN_JSON: "plan.json"
+  TF_IN_AUTOMATION: "true"
+  TF_ROOT: "${CI_PROJECT_DIR}"
+  TF_STATE_NAME: "default"
+  TF_HTTP_USERNAME: "gitlab-ci-token"
+  TF_HTTP_PASSWORD: "${CI_JOB_TOKEN}"
+
+image:
+  name: hashicorp/terraform:$TF_VERSION
+  entrypoint:
+    - '/usr/bin/env'
+    - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
 .cache: &cache
   cache:
     key: ${TF_ENVIRONMENT}
