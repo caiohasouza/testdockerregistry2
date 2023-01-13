@@ -17,7 +17,7 @@ image:
   cache:
     key: ${TF_ENVIRONMENT}
     paths:
-      - ${TF_ROOT}/environments/${TF_ENVIRONMENT}/.terraform/
+      - ${TF_ROOT}/${TF_ENVIRONMENT}/.terraform/
 
 .aws-assume-role: &aws-assume-role
   - apk add -q --no-cache py3-pip && pip3 -q install --upgrade awscli
@@ -34,16 +34,16 @@ image:
 .rules-merge-request: &rules-merge-request
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     changes:
-    - environments/${TF_ENVIRONMENT}/**
+    - ${TF_ENVIRONMENT}/**
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     changes:
-    - environments/${TF_ENVIRONMENT}/**
+    - ${TF_ENVIRONMENT}/**
   - if: $CI_COMMIT_MESSAGE =~ /deploy all/
 
 .rules-main: &rules-main
   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     changes:
-    - environments/${TF_ENVIRONMENT}/**
+    - ${TF_ENVIRONMENT}/**
     when: manual
   - if: $CI_COMMIT_MESSAGE =~ /deploy all/
     when: manual
@@ -52,7 +52,7 @@ image:
   stage: validate
   <<: *cache
   script:
-    - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
+    - cd ${TF_ROOT}/${TF_ENVIRONMENT}
     - terraform init
     - terraform validate
     - terraform fmt -list=true -write=false -diff=true -check=true -recursive
@@ -63,7 +63,7 @@ image:
   stage: plan
   <<: *cache
   script:
-    - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
+    - cd ${TF_ROOT}/${TF_ENVIRONMENT}
     - *aws-assume-role
     - apk --no-cache add -q jq curl
     - alias convert_report="jq -r '([.resource_changes[]?.change.actions?]|flatten)|{\"create\":(map(select(.==\"create\"))|length),\"update\":(map(select(.==\"update\"))|length),\"delete\":(map(select(.==\"delete\"))|length)}'"
@@ -72,9 +72,9 @@ image:
   artifacts:
     name: plan
     paths:
-      - ${CI_PROJECT_DIR}/environments/${TF_ENVIRONMENT}/${PLAN}
+      - ${CI_PROJECT_DIR}/${TF_ENVIRONMENT}/${PLAN}
     reports:
-      terraform: ${CI_PROJECT_DIR}/environments/${TF_ENVIRONMENT}/${PLAN_JSON}
+      terraform: ${CI_PROJECT_DIR}/${TF_ENVIRONMENT}/${PLAN_JSON}
     expire_in: 7 days
   rules:
     - *rules-merge-request
@@ -83,7 +83,7 @@ image:
   stage: apply
   <<: *cache
   script:
-    - cd ${TF_ROOT}/environments/${TF_ENVIRONMENT}
+    - cd ${TF_ROOT}/${TF_ENVIRONMENT}
     - *aws-assume-role
     - terraform apply -auto-approve -input=false $PLAN
   allow_failure: false
