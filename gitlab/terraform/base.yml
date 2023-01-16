@@ -51,8 +51,6 @@ image:
   <<: *cache
   script:
     - cd ${TF_ROOT}/${TF_ENVIRONMENT}
-    - export TF_HTTP_USERNAME="gitlab-ci-token"
-    - export TF_HTTP_PASSWORD="${CI_JOB_TOKEN}"
     - terraform init
     - terraform validate
     - terraform fmt -list=true -write=false -diff=true -check=true -recursive
@@ -61,6 +59,9 @@ image:
     
 .plan:
   stage: plan
+  variables:
+    TF_HTTP_USERNAME: "${GITLAB_USERNAME}"
+    TF_HTTP_PASSWORD: "${GITLAB_TOKEN}"
   <<: *cache
   script:
     - cd ${TF_ROOT}/${TF_ENVIRONMENT}
@@ -81,13 +82,13 @@ image:
 
 .apply:
   stage: apply
+  variables:
+    TF_HTTP_USERNAME: "gitlab-ci-token"
+    TF_HTTP_PASSWORD: "${CI_JOB_TOKEN}"
   <<: *cache
   script:
     - cd ${TF_ROOT}/${TF_ENVIRONMENT}
-    - export TF_HTTP_USERNAME="gitlab-ci-token"
-    - export TF_HTTP_PASSWORD="${CI_JOB_TOKEN}"
     - *aws-assume-role
-    - echo ${TF_HTTP_USERNAME}
     - terraform apply -auto-approve -input=false $PLAN
   allow_failure: false
   rules:
