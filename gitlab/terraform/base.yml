@@ -86,6 +86,7 @@ image:
   script:
     - cd ${TF_ROOT}/${TF_ENVIRONMENT}
     - *aws-assume-role
+    - echo ${TF_HTTP_USERNAME}
     - terraform apply -auto-approve -input=false $PLAN
   allow_failure: false
   rules:
