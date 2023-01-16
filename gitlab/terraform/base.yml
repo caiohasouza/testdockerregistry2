@@ -64,7 +64,6 @@ image:
   <<: *cache
   script:
     - cd ${TF_ROOT}/${TF_ENVIRONMENT}
-    - echo $TF_HTTP_USERNAME
     - *aws-assume-role
     - apk --no-cache add -q jq curl
     - alias convert_report="jq -r '([.resource_changes[]?.change.actions?]|flatten)|{\"create\":(map(select(.==\"create\"))|length),\"update\":(map(select(.==\"update\"))|length),\"delete\":(map(select(.==\"delete\"))|length)}'"
