@@ -4,8 +4,6 @@ variables:
   TF_IN_AUTOMATION: "true"
   TF_ROOT: "${CI_PROJECT_DIR}"
   TF_STATE_NAME: "default"
-  TF_HTTP_USERNAME: "gitlab-ci-token"
-  TF_HTTP_PASSWORD: "${CI_JOB_TOKEN}"
 
 image:
   name: hashicorp/terraform:$TF_VERSION
@@ -82,6 +80,9 @@ image:
 .apply:
   stage: apply
   <<: *cache
+  variables:
+    TF_HTTP_USERNAME: "gitlab-ci-token"
+    TF_HTTP_PASSWORD: "${CI_JOB_TOKEN}"
   script:
     - cd ${TF_ROOT}/${TF_ENVIRONMENT}
     - *aws-assume-role
