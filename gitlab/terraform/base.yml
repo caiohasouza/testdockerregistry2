@@ -59,36 +59,36 @@ image:
   rules:
     - *rules-merge-request
     
-#.plan:
-#  stage: plan
-#  <<: *cache
-#  script:
-#    - cd ${TF_ROOT}/${TF_ENVIRONMENT}
-#    - *aws-assume-role
-#    - apk --no-cache add -q jq curl
-#    - alias convert_report="jq -r '([.resource_changes[]?.change.actions?]|flatten)|{\"create\":(map(select(.==\"create\"))|length),\"update\":(map(select(.==\"update\"))|length),\"delete\":(map(select(.==\"delete\"))|length)}'"
-#    - terraform plan -lock=false -out=$PLAN
-#    - terraform show --json $PLAN | convert_report > $PLAN_JSON
-#  artifacts:
-#    name: plan
-#    paths:
-#      - ${CI_PROJECT_DIR}/${TF_ENVIRONMENT}/${PLAN}
-#    reports:
-#      terraform: ${CI_PROJECT_DIR}/${TF_ENVIRONMENT}/${PLAN_JSON}
-#    expire_in: 7 days
-#  rules:
-#    - *rules-merge-request
-#
-#.apply:
-#  stage: apply
-#  <<: *cache
-#  script:
-#    - cd ${TF_ROOT}/${TF_ENVIRONMENT}
-#    - export TF_HTTP_USERNAME="gitlab-ci-token"
-#    - export TF_HTTP_PASSWORD="${CI_JOB_TOKEN}"
-#    - *aws-assume-role
-#    - echo ${TF_HTTP_USERNAME}
-#    - terraform apply -auto-approve -input=false $PLAN
-#  allow_failure: false
-#  rules:
-#    - *rules-main
+.plan:
+  stage: plan
+  <<: *cache
+  script:
+    - cd ${TF_ROOT}/${TF_ENVIRONMENT}
+    - *aws-assume-role
+    - apk --no-cache add -q jq curl
+    - alias convert_report="jq -r '([.resource_changes[]?.change.actions?]|flatten)|{\"create\":(map(select(.==\"create\"))|length),\"update\":(map(select(.==\"update\"))|length),\"delete\":(map(select(.==\"delete\"))|length)}'"
+    - terraform plan -lock=false -out=$PLAN
+    - terraform show --json $PLAN | convert_report > $PLAN_JSON
+  artifacts:
+    name: plan
+    paths:
+      - ${CI_PROJECT_DIR}/${TF_ENVIRONMENT}/${PLAN}
+    reports:
+      terraform: ${CI_PROJECT_DIR}/${TF_ENVIRONMENT}/${PLAN_JSON}
+    expire_in: 7 days
+  rules:
+    - *rules-merge-request
+
+.apply:
+  stage: apply
+  <<: *cache
+  script:
+    - cd ${TF_ROOT}/${TF_ENVIRONMENT}
+    - export TF_HTTP_USERNAME="gitlab-ci-token"
+    - export TF_HTTP_PASSWORD="${CI_JOB_TOKEN}"
+    - *aws-assume-role
+    - echo ${TF_HTTP_USERNAME}
+    - terraform apply -auto-approve -input=false $PLAN
+  allow_failure: false
+  rules:
+    - *rules-main
