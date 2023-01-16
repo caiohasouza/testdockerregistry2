@@ -80,11 +80,10 @@ image:
 .apply:
   stage: apply
   <<: *cache
-  variables:
-    TF_HTTP_USERNAME: "gitlab-ci-token"
-    TF_HTTP_PASSWORD: "${CI_JOB_TOKEN}"
   script:
     - cd ${TF_ROOT}/${TF_ENVIRONMENT}
+    - export TF_HTTP_USERNAME="gitlab-ci-token"
+    - export TF_HTTP_PASSWORD="${CI_JOB_TOKEN}"
     - *aws-assume-role
     - echo ${TF_HTTP_USERNAME}
     - terraform apply -auto-approve -input=false $PLAN
