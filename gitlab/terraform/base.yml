@@ -48,6 +48,9 @@ image:
 
 .validate:
   stage: validate
+  variables:
+    TF_HTTP_USERNAME: "${GITLAB_USERNAME}"
+    TF_HTTP_PASSWORD: "${GITLAB_TOKEN}"
   <<: *cache
   script:
     - cd ${TF_ROOT}/${TF_ENVIRONMENT}
